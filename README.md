@@ -7,7 +7,7 @@ Prerequisites:
 - pip package manager
 
 Setup:
-1. Clone the repository:
+1. Clone the repository (or just copy the api.py and requirements.txt files):
    git clone <repository-url>
    cd listing-generation-app
 
@@ -25,7 +25,7 @@ Setup:
 Running the App:
 - To start the Flask server, run the following command:
    python app.py
-- The app will be accessible at http://localhost:5000.
+- The app will be accessible at http://127.0.0.1:5000.
 
 Usage:
 - Use the /generation endpoint with a POST request to generate the listing fields.
@@ -33,7 +33,7 @@ Usage:
 - The generated fields will be returned as a JSON response.
 
 Example Usage:
-- Make a POST request to http://localhost:5000/generation with the following JSON body:
+- Make a POST request to http://127.0.0.1:5000/generation with the following JSON body:
    {
      "prompt": "Please generate a listing for a brand new iPhone 12 Pro Max."
    }
