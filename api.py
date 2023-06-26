@@ -14,7 +14,7 @@ CORS(app, resources={f"/*": {"origins": "*"}})
 # Replace the following lines with the path to your service account JSON key file
 
 
-vertexai.init(credentials=service_account.Credentials.from_service_account_file("/Users/joebarry-marron/Desktop/listing-generation-f23ab187859c.json"),project="listing-generation", location="us-central1")
+vertexai.init(credentials=service_account.Credentials.from_service_account_file("<path-to-your-file>.json"),project="listing-generation", location="us-central1")
 vertexai.init(project="listing-generation", location="us-central1")
 parameters = {
     "temperature": 0.2,
