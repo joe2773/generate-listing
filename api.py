@@ -5,11 +5,17 @@ import vertexai
 from vertexai.language_models import TextGenerationModel
 from flask_cors import CORS, cross_origin
 import re
+from google.cloud import storage
+from google.oauth2 import service_account
 
 app = Flask(__name__)
 CORS(app, resources={f"/*": {"origins": "*"}})
 
-vertexai.init(project="tattico-website", location="us-central1")
+# Replace the following lines with the path to your service account JSON key file
+
+
+vertexai.init(credentials=service_account.Credentials.from_service_account_file("/Users/joebarry-marron/Desktop/listing-generation-f23ab187859c.json"),project="listing-generation", location="us-central1")
+vertexai.init(project="listing-generation", location="us-central1")
 parameters = {
     "temperature": 0.2,
     "max_output_tokens": 256,
@@ -21,11 +27,11 @@ parameters = {
 def generate_listing():
     prompt = request.json["prompt"]
     response = palm_generate_listing_response(prompt)
-    
     description = extract_field(response,"description")
     price = extract_field(response,"price")
     title = extract_field(response,"title")
     shipping_option = extract_field(response,"shipping_option")
+
 
     response = flask.jsonify({
         "title": title,
@@ -51,7 +57,7 @@ def palm_generate_listing_response(prompt):
             title: I\'m wanting to create a title for my e-commerce website classifieds listing that will help me sell the given object, it should be less than 50 characters long and give a succinct and catch overview of the object that is being sold.
 
             description:
-            Please generate a sales copy for a classifieds listing on an e-commerce website based on a user-given description of the object that they are trying to sell. This description should espouse the benefits the object that is being sold and try to sell it, maximum length is 500 characters
+            Please generate a sales copy for a classifieds listing on an e-commerce website based on a user-given description of the object that they are trying to sell. This description should espouse the benefits the object that is being sold and try to sell it, maximum length is 500 characters and it should be engaging and entertaining while also being accurate and providing all the necessary information about the product
 
             price: 
             I\'m wanting to either extract or estimate the price of various items for an e-commerce website based off of a short description of the object, the prices should just be returned by themselves. Please find these prices by looking up the product themselves and then estimating based on the provided condition. Please look up specific prices for New Zealand stores as New Zealand prices are typically much higher than a standard usd-NZD conversion would suggest, due to smaller economy of scale as well as shipping costs.
@@ -85,6 +91,54 @@ def palm_generate_listing_response(prompt):
         **parameters
     )
     return f"{response.text}"
+def palm_generate_description_response(prompt):
+    model = TextGenerationModel.from_pretrained("text-bison")
+    response = model.predict(
+        f"""
+            Please generate a sales copy for a classifieds listing on an e-commerce website based on a user-given description of the object that they are trying to sell. This description should espouse the benefits the object that is being sold and try to sell it, it should be engaging and entertaining while also being accurate and providing all the necessary information about the product
+            input: {prompt}
+            output: """,**parameters
+    )
+    return f"{response.text}"
+def palm_generate_price_response(prompt):
+    model = TextGenerationModel.from_pretrained("text-bison")
+    response = model.predict(
+       {prompt}
+    )
+    return f"{response.text}"
+
+def palm_generate_title_response(prompt):
+    model = TextGenerationModel.from_pretrained("text-bison")
+    response = model.predict(
+        f""" I\'m wanting to create a title for my e-commerce website classifieds listing that will help me sell the given object, it should be less than 50 characters long and give a succinct and catch overview of the object that is being sold.
+        input: Im wanting to sell a 2021 M1 macbook pro 16 inch 16gb memory 500gb SSD, cash only pickup auckland. It is in great condition and I've only used for a year, selling as I have upgraded to the latest M2 macbook pro , no issues at all on this computer and 3 months warranty remaining. Can provide receipts.
+        ouput: 2021 M1 Macbook pro 16-inch great condition 16gb RAM 500gb ssd
+        input: {prompt}
+        output:
+          """,
+          **parameters
+    )
+    return f"{response.text}"
+
+def palm_generate_shipping_option_response(prompt):
+    model = TextGenerationModel.from_pretrained("text-bison")
+    response = model.predict(
+        f""" I\'m wanting to determine the shipping options for a classified listing that a user is wanting to list on my e-commerce website. The shipping options are as follows: pick up only, shipping nationwide only, pick up or shipping available the default should be pick up or shipping available if nothing explicit is mentioned around shipping
+        input: I am selling a vintage collection of coke cans for 500$ asking price, they are available for pick up only in auckland central, perfect condition never opened
+        output: pick up only
+
+        input: I am selling a vintage porsche 911 1998 50000kms
+        output: pick up or shipping available
+
+        input: selling a lego saturn v brand new condition, shipping available to north or south islands
+        output: shipping nationwide only
+        
+        input: {prompt}
+        output: """,
+        
+        **parameters
+    )
+    return f"{response.text}"
 
 def extract_field(string, field_name):
     """Extracts the value of the specified field from the string.
@@ -99,8 +153,8 @@ def extract_field(string, field_name):
 
     regex = r"{field_name}: (.*)".format(field_name=field_name)
     match = re.search(regex, string)
-    return match.group(1)
-
-
+    if match is not None:
+        return match.group(1)
+    
 if __name__ == "__main__":
     app.run(debug=True)
